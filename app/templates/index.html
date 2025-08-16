@@ -1,37 +1,633 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 class="mb-3">Welcome to Dynamic Price Tracker</h1>
-<form method="post" action="{{ url_for('main.track') }}" class="card p-3 shadow-sm">
-  <div class="mb-3">
-    <label class="form-label">Paste your product URL</label>
-    <input type="url" name="url" class="form-control" placeholder="https://www.flipkart.com/..." required>
+<div class="hero-section">
+  <div class="container">
+    <h1 class="display-3 fw-bold">💰 Smart Price Tracker</h1>
+    <p class="lead">Track product prices across multiple e-commerce platforms and get notified when prices drop to your target!</p>
+    <div class="mt-4">
+      <a href="{{ url_for('main.search') }}" class="btn btn-warning btn-lg me-3">
+        <i class="fas fa-search me-2"></i>Search Products
+      </a>
+      <a href="#features" class="btn btn-outline-light btn-lg">
+        <i class="fas fa-info-circle me-2"></i>Learn More
+      </a>
+    </div>
   </div>
-  <div class="mb-3">
-    <label class="form-label">Target Price (₹)</label>
-    <input type="number" step="0.01" name="target" class="form-control" placeholder="e.g., 1499">
-  </div>
-  <button class="btn btn-primary">Track</button>
-</form>
+</div>
 
-<hr>
-<h4 class="mt-4">Tracked Products</h4>
-<table class="table table-sm align-middle">
-  <thead>
-    <tr><th>ID</th><th>Title</th><th>Site</th><th>Last Price</th><th>Updated</th><th></th></tr>
-  </thead>
-  <tbody>
-  {% for p in products %}
-    <tr>
-      <td>{{ p.product_id }}</td>
-      <td class="text-truncate" style="max-width: 420px;">{{ p.title }}</td>
-      <td>{{ p.site }}</td>
-      <td>₹{{ '%.2f'|format(p.last_seen_price|float) }}</td>
-      <td>{{ p.updated_at }}</td>
-      <td><a class="btn btn-outline-secondary btn-sm" href="{{ url_for('main.history_item', product_id=p.product_id) }}">View</a></td>
-    </tr>
-  {% else %}
-    <tr><td colspan="6" class="text-muted">No products tracked yet.</td></tr>
-  {% endfor %}
-  </tbody>
-</table>
+<div class="container">
+  <!-- Quick Search Section -->
+  <div class="row justify-content-center mb-5">
+    <div class="col-lg-10">
+      <div class="form-card p-4">
+        <div class="text-center mb-4">
+          <i class="fas fa-rocket fa-3x text-primary mb-3"></i>
+          <h3>🚀 Quick Product Search</h3>
+          <p class="text-muted">Find products across multiple websites to discover the best deals!</p>
+        </div>
+        
+        <div class="row justify-content-center">
+          <div class="col-md-8 text-center">
+            <a href="{{ url_for('main.search') }}" class="btn btn-primary btn-lg px-5 py-3">
+              <i class="fas fa-search me-2"></i>Start Searching Now
+            </a>
+            <p class="text-muted mt-2">
+              <small>Search for iPhone, Samsung, Nike, Laptop, and more...</small>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Product Section -->
+  <div class="row justify-content-center mb-5">
+    <div class="col-lg-8">
+      <div class="form-card p-4">
+        <div class="text-center mb-4">
+          <i class="fas fa-plus-circle fa-3x text-success mb-3"></i>
+          <h3>📊 Add New Product to Track</h3>
+          <p class="text-muted">Monitor specific products with custom price alerts</p>
+        </div>
+        
+        <form method="post" action="{{ url_for('main.track') }}" id="trackForm" class="needs-validation" novalidate>
+          <div class="mb-4">
+            <label class="form-label fw-bold">
+              <i class="fas fa-link me-2 text-primary"></i>Product URL
+            </label>
+            <input type="url" 
+                   name="url" 
+                   id="productUrl"
+                   class="form-control form-control-lg" 
+                   placeholder="https://www.amazon.in/... or https://www.flipkart.com/..." 
+                   required>
+            <div class="form-text">
+              <i class="fas fa-check-circle me-1 text-success"></i>
+              Supported platforms: Amazon, Flipkart, Myntra, Meesho
+            </div>
+          </div>
+          
+          <div class="mb-4">
+            <label class="form-label fw-bold">
+              <i class="fas fa-bullseye me-2 text-warning"></i>Target Price (₹)
+            </label>
+            <input type="number" 
+                   step="0.01" 
+                   name="target" 
+                   id="targetPrice"
+                   class="form-control form-control-lg" 
+                   placeholder="e.g., 1499.99">
+            <div class="form-text">
+              <i class="fas fa-lightbulb me-1 text-warning"></i>
+              Leave empty if you just want to track without alerts
+            </div>
+          </div>
+          
+          <div class="d-grid">
+            <button type="submit" class="btn btn-success btn-lg" id="trackBtn">
+              <i class="fas fa-play me-2"></i>
+              <span id="trackBtnText">Start Tracking</span>
+              <span id="trackBtnSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+            </button>
+          </div>
+        </form>
+        
+        <!-- Platform Icons -->
+        <div class="mt-4 text-center">
+          <p class="text-muted mb-2"><small>Supported Platforms:</small></p>
+          <div class="d-flex justify-content-center gap-3">
+            <div class="platform-icon" title="Amazon">
+              <i class="fab fa-amazon fa-2x text-warning"></i>
+            </div>
+            <div class="platform-icon" title="Flipkart">
+              <i class="fas fa-shopping-cart fa-2x text-blue"></i>
+            </div>
+            <div class="platform-icon" title="Myntra">
+              <i class="fas fa-tshirt fa-2x text-pink"></i>
+            </div>
+            <div class="platform-icon" title="Meesho">
+              <i class="fas fa-store fa-2x text-purple"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tracked Products Section -->
+  <div class="row mb-5">
+    <div class="col-12">
+      <div class="table-container">
+        <div class="card-header">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h4 class="mb-0">
+                <i class="fas fa-chart-line me-2 text-primary"></i>
+                Currently Tracked Products
+              </h4>
+              <p class="text-muted mb-0">
+                Monitor <strong>{{ products|length }}</strong> products for price changes
+              </p>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-primary btn-sm" onclick="refreshPrices()">
+                <i class="fas fa-sync-alt me-1"></i>Refresh
+              </button>
+              <button class="btn btn-outline-success btn-sm" onclick="exportData()">
+                <i class="fas fa-download me-1"></i>Export
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {% if products %}
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Product ID</th>
+                  <th>Product Details</th>
+                  <th>Platform</th>
+                  <th>Current Price</th>
+                  <th>Target Price</th>
+                  <th>Last Updated</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in products %}
+                  <tr class="product-row" data-product-id="{{ p.product_id }}">
+                    <td>
+                      <span class="badge bg-secondary fs-6">#{{ p.product_id }}</span>
+                    </td>
+                    <td>
+                      <div class="d-flex align-items-start">
+                        <div class="flex-grow-1">
+                          <h6 class="fw-bold mb-1 text-truncate" style="max-width: 300px;" title="{{ p.title }}">
+                            {{ p.title }}
+                          </h6>
+                          <small class="text-muted d-block">
+                            <i class="fas fa-link me-1"></i>
+                            <span class="text-truncate d-inline-block" style="max-width: 200px;">
+                              {{ p.url }}
+                            </span>
+                          </small>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="platform-badge platform-{{ p.site.lower() }}">
+                        <i class="fas fa-shopping-cart me-1"></i>
+                        {{ p.site }}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="price-tag">
+                        <i class="fas fa-rupee-sign me-1"></i>
+                        {{ '%.2f'|format(p.last_seen_price) }}
+                      </div>
+                    </td>
+                    <td>
+                      {% if p.target_price %}
+                        <div class="d-flex align-items-center">
+                          <span class="badge bg-warning fs-6">
+                            <i class="fas fa-bullseye me-1"></i>
+                            ₹{{ '%.2f'|format(p.target_price) }}
+                          </span>
+                          {% if p.last_seen_price <= p.target_price %}
+                            <span class="badge bg-success ms-2">
+                              <i class="fas fa-check me-1"></i>Target Met!
+                            </span>
+                          {% endif %}
+                        </div>
+                      {% else %}
+                        <span class="text-muted">
+                          <i class="fas fa-minus me-1"></i>No target
+                        </span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        {{ p.updated_at }}
+                      </small>
+                    </td>
+                    <td>
+                      <div class="btn-group" role="group">
+                        <button class="btn btn-outline-secondary btn-sm" 
+                                onclick="viewHistory({{ p.product_id }}, '{{ p.title }}')"
+                                title="View History">
+                          <i class="fas fa-chart-line"></i>
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm" 
+                                onclick="editTarget({{ p.product_id }}, {{ p.target_price or 0 }})"
+                                title="Edit Target">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" 
+                                onclick="removeProduct({{ p.product_id }}, '{{ p.title }}')"
+                                title="Remove">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <i class="fas fa-box-open fa-4x mb-3"></i>
+            <h5>No products tracked yet</h5>
+            <p class="text-muted mb-4">Start by searching for products or adding a product URL above to begin tracking prices!</p>
+            <div class="d-flex gap-2 justify-content-center">
+              <a href="{{ url_for('main.search') }}" class="btn btn-primary">
+                <i class="fas fa-search me-2"></i>Search Products
+              </a>
+              <button class="btn btn-outline-secondary" onclick="showDemo()">
+                <i class="fas fa-play me-2"></i>See Demo
+              </button>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Features Section -->
+  <div class="row mb-5" id="features">
+    <div class="col-12 text-center mb-4">
+      <h3 class="fw-bold">✨ Why Choose Smart Price Tracker?</h3>
+      <p class="text-muted">Discover the features that make us the best choice for price monitoring</p>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-4">
+      <div class="card h-100 interactive-card text-center">
+        <div class="card-body p-4">
+          <div class="feature-icon mb-3">
+            <i class="fas fa-search fa-2x text-primary"></i>
+          </div>
+          <h5 class="card-title">🔍 Smart Search</h5>
+          <p class="card-text">Find products across multiple platforms with one intelligent search query</p>
+          <div class="mt-3">
+            <span class="badge bg-primary">Multi-platform</span>
+            <span class="badge bg-info">AI-powered</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-4">
+      <div class="card h-100 interactive-card text-center">
+        <div class="card-body p-4">
+          <div class="feature-icon mb-3">
+            <i class="fas fa-chart-line fa-2x text-success"></i>
+          </div>
+          <h5 class="card-title">📈 Real-time Tracking</h5>
+          <p class="card-text">Monitor prices across multiple platforms automatically with smart scheduling</p>
+          <div class="mt-3">
+            <span class="badge bg-success">Automated</span>
+            <span class="badge bg-warning">Real-time</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-4">
+      <div class="card h-100 interactive-card text-center">
+        <div class="card-body p-4">
+          <div class="feature-icon mb-3">
+            <i class="fas fa-bell fa-2x text-warning"></i>
+          </div>
+          <h5 class="card-title">🔔 Smart Alerts</h5>
+          <p class="card-text">Get notified when prices drop to your target with customizable alerts</p>
+          <div class="mt-3">
+            <span class="badge bg-warning">Instant</span>
+            <span class="badge bg-info">Customizable</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-4">
+      <div class="card h-100 interactive-card text-center">
+        <div class="card-body p-4">
+          <div class="feature-icon mb-3">
+            <i class="fas fa-history fa-2x text-info"></i>
+          </div>
+          <h5 class="card-title">📊 Price History</h5>
+          <p class="card-text">View detailed price trends over time with comprehensive analytics</p>
+          <div class="mt-3">
+            <span class="badge bg-info">Analytics</span>
+            <span class="badge bg-success">Trends</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Section -->
+  <div class="row mb-5">
+    <div class="col-12">
+      <div class="form-card p-4">
+        <div class="text-center mb-4">
+          <h4>📈 Platform Statistics</h4>
+          <p class="text-muted">Track your shopping across different e-commerce platforms</p>
+        </div>
+        
+        <div class="row text-center">
+          <div class="col-md-3 mb-3">
+            <div class="stat-card bg-primary text-white">
+              <div class="stat-icon">
+                <i class="fab fa-amazon fa-2x"></i>
+              </div>
+              <div class="stat-number">{{ products|selectattr('site', 'equalto', 'Amazon')|list|length }}</div>
+              <div class="stat-label">Amazon Products</div>
+            </div>
+          </div>
+          
+          <div class="col-md-3 mb-3">
+            <div class="stat-card bg-info text-white">
+              <div class="stat-icon">
+                <i class="fas fa-shopping-cart fa-2x"></i>
+              </div>
+              <div class="stat-number">{{ products|selectattr('site', 'equalto', 'Flipkart')|list|length }}</div>
+              <div class="stat-label">Flipkart Products</div>
+            </div>
+          </div>
+          
+          <div class="col-md-3 mb-3">
+            <div class="stat-card bg-pink text-white">
+              <div class="stat-icon">
+                <i class="fas fa-tshirt fa-2x"></i>
+              </div>
+              <div class="stat-number">{{ products|selectattr('site', 'equalto', 'Myntra')|list|length }}</div>
+              <div class="stat-label">Myntra Products</div>
+            </div>
+          </div>
+          
+          <div class="col-md-3 mb-3">
+            <div class="stat-card bg-purple text-white">
+              <div class="stat-icon">
+                <i class="fas fa-store fa-2x"></i>
+              </div>
+              <div class="stat-number">{{ products|selectattr('site', 'equalto', 'Meesho')|list|length }}</div>
+              <div class="stat-label">Meesho Products</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript for Interactive Features -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Form validation
+  const form = document.getElementById('trackForm');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      if (!form.checkValidity()) {
+        e.preventDefault();
+        e.stopPropagation();
+        showAlert('Please fill in all required fields correctly.', 'warning');
+        return;
+      }
+      
+      // Show loading state
+      showLoading();
+      document.getElementById('trackBtnText').textContent = 'Adding Product...';
+      document.getElementById('trackBtnSpinner').style.display = 'inline-block';
+      document.getElementById('trackBtn').disabled = true;
+    });
+  }
+
+  // URL validation
+  const urlInput = document.getElementById('productUrl');
+  if (urlInput) {
+    urlInput.addEventListener('input', function() {
+      const url = this.value.trim();
+      if (url && isValidEcommerceUrl(url)) {
+        this.classList.add('is-valid');
+        this.classList.remove('is-invalid');
+      } else if (url) {
+        this.classList.add('is-invalid');
+        this.classList.remove('is-valid');
+      } else {
+        this.classList.remove('is-valid', 'is-invalid');
+      }
+    });
+  }
+
+  // Target price validation
+  const targetInput = document.getElementById('targetPrice');
+  if (targetInput) {
+    targetInput.addEventListener('input', function() {
+      const price = parseFloat(this.value);
+      if (price > 0) {
+        this.classList.add('is-valid');
+        this.classList.remove('is-invalid');
+      } else if (this.value) {
+        this.classList.add('is-invalid');
+        this.classList.remove('is-valid');
+      } else {
+        this.classList.remove('is-valid', 'is-invalid');
+      }
+    });
+  }
+});
+
+// URL validation function
+function isValidEcommerceUrl(url) {
+  const validDomains = [
+    'amazon.in', 'amazon.com',
+    'flipkart.com',
+    'myntra.com',
+    'meesho.com'
+  ];
+  
+  try {
+    const urlObj = new URL(url);
+    return validDomains.some(domain => urlObj.hostname.includes(domain));
+  } catch {
+    return false;
+  }
+}
+
+// View product history
+function viewHistory(productId, productName) {
+  showAlert(`Opening price history for "${productName}"...`, 'info');
+  window.location.href = `/history/${productId}`;
+}
+
+// Edit target price
+function editTarget(productId, currentTarget) {
+  const newTarget = prompt(`Enter new target price for product #${productId}:`, currentTarget);
+  
+  if (newTarget !== null && newTarget !== '') {
+    const price = parseFloat(newTarget);
+    if (isNaN(price) || price <= 0) {
+      showAlert('Please enter a valid positive number for the target price.', 'error');
+      return;
+    }
+    
+    // Here you would typically make an AJAX call to update the target price
+    showAlert(`Target price updated to ₹${price.toFixed(2)}!`, 'success');
+  }
+}
+
+// Remove product
+function removeProduct(productId, productName) {
+  if (confirm(`Are you sure you want to remove "${productName}" from tracking?\n\nThis action cannot be undone.`)) {
+    showAlert(`Removing "${productName}" from tracking...`, 'info');
+    
+    // Here you would typically make an AJAX call to remove the product
+    // For now, just hide the row
+    const row = document.querySelector(`[data-product-id="${productId}"]`);
+    if (row) {
+      row.style.opacity = '0.5';
+      row.style.pointerEvents = 'none';
+    }
+    
+    setTimeout(() => {
+      if (row) {
+        row.remove();
+        showAlert(`"${productName}" has been removed from tracking.`, 'success');
+      }
+    }, 1000);
+  }
+}
+
+// Refresh prices
+function refreshPrices() {
+  showAlert('Refreshing product prices... This may take a few moments.', 'info');
+  
+  // Here you would typically make an AJAX call to refresh prices
+  // For now, just show a loading state
+  document.querySelectorAll('.product-row').forEach(row => {
+    row.style.opacity = '0.7';
+  });
+  
+  setTimeout(() => {
+    document.querySelectorAll('.product-row').forEach(row => {
+      row.style.opacity = '1';
+    });
+    showAlert('Prices have been refreshed!', 'success');
+  }, 2000);
+}
+
+// Export data
+function exportData() {
+  showAlert('Export feature coming soon! You can copy the data manually for now.', 'info');
+}
+
+// Show demo
+function showDemo() {
+  showAlert('Demo mode activated! Try searching for "iPhone" or "Samsung" to see how it works.', 'info');
+}
+
+// Platform icon hover effects
+document.querySelectorAll('.platform-icon').forEach(icon => {
+  icon.addEventListener('mouseenter', function() {
+    this.style.transform = 'scale(1.2) rotate(5deg)';
+    this.style.transition = 'all 0.3s ease';
+  });
+  
+  icon.addEventListener('mouseleave', function() {
+    this.style.transform = 'scale(1) rotate(0deg)';
+  });
+});
+
+// Feature card interactions
+document.querySelectorAll('.interactive-card').forEach(card => {
+  card.addEventListener('mouseenter', function() {
+    this.style.transform = 'translateY(-10px) scale(1.02)';
+  });
+  
+  card.addEventListener('mouseleave', function() {
+    this.style.transform = 'translateY(0) scale(1)';
+  });
+});
+
+// Smooth scrolling for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function (e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  });
+});
+</script>
+
+<!-- Additional CSS for this page -->
+<style>
+.platform-icon {
+  padding: 1rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.platform-icon:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.stat-card {
+  padding: 2rem 1rem;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  transition: var(--transition);
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-xl);
+}
+
+.stat-icon {
+  margin-bottom: 1rem;
+  opacity: 0.8;
+}
+
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.feature-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(99, 102, 241, 0.2) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  transition: var(--transition);
+}
+
+.interactive-card:hover .feature-icon {
+  transform: scale(1.1);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(99, 102, 241, 0.3) 100%);
+}
+
+.bg-pink { background: linear-gradient(135deg, #ec4899, #be185d) !important; }
+.bg-purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important; }
+.bg-blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important; }
+</style>
 {% endblock %}

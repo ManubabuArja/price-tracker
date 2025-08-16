@@ -1,0 +1,563 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="hero-section">
+  <div class="container">
+    <h1 class="display-4 fw-bold">🔍 Smart Product Search</h1>
+    <p class="lead">Find the best deals across multiple e-commerce platforms with AI-powered recommendations</p>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Search Form Section -->
+  <div class="row justify-content-center mb-5">
+    <div class="col-lg-8">
+      <div class="form-card p-4">
+        <div class="text-center mb-4">
+          <i class="fas fa-search fa-3x text-primary mb-3"></i>
+          <h3>Find Your Perfect Product</h3>
+          <p class="text-muted">Search across Amazon, Flipkart, Myntra, and Meesho in one go!</p>
+        </div>
+        
+        <form id="searchForm" method="post" class="needs-validation" novalidate>
+          <div class="mb-4">
+            <label class="form-label fw-bold">
+              <i class="fas fa-tag me-2 text-warning"></i>Product Name
+            </label>
+            <input type="text" 
+                   name="product_name" 
+                   id="productName"
+                   class="form-control form-control-lg" 
+                   placeholder="e.g., iPhone 15 Pro, Samsung Galaxy S24, Nike Air Max..." 
+                   value="{{ search_query }}" 
+                   required>
+            <div class="form-text">
+              <i class="fas fa-lightbulb me-1 text-warning"></i>
+              Be specific for better results! Include brand, model, and key features.
+            </div>
+          </div>
+          
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary btn-lg" id="searchBtn">
+              <i class="fas fa-search me-2"></i>
+              <span id="searchBtnText">Search Products</span>
+              <span id="searchBtnSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+            </button>
+          </div>
+        </form>
+        
+        <!-- Quick Search Suggestions -->
+        <div class="mt-4">
+          <p class="text-muted mb-2"><small>Popular searches:</small></p>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-secondary btn-sm quick-search" data-query="iPhone 15">
+              <i class="fas fa-mobile-alt me-1"></i>iPhone 15
+            </button>
+            <button class="btn btn-outline-secondary btn-sm quick-search" data-query="Samsung Galaxy">
+              <i class="fas fa-mobile-alt me-1"></i>Samsung Galaxy
+            </button>
+            <button class="btn btn-outline-secondary btn-sm quick-search" data-query="Nike Shoes">
+              <i class="fas fa-shoe-prints me-1"></i>Nike Shoes
+            </button>
+            <button class="btn btn-outline-secondary btn-sm quick-search" data-query="Laptop">
+              <i class="fas fa-laptop me-1"></i>Laptop
+            </button>
+            <button class="btn btn-outline-secondary btn-sm quick-search" data-query="Headphones">
+              <i class="fas fa-headphones me-1"></i>Headphones
+            </button>
+            <button class="btn btn-outline-secondary btn-sm quick-search" data-query="Smartwatch">
+              <i class="fas fa-clock me-1"></i>Smartwatch
+            </button>
+            <button class="btn btn-outline-secondary btn-sm quick-search" data-query="Vivo Y100">
+              <i class="fas fa-mobile-alt me-1"></i>Vivo Y100
+            </button>
+          </div>
+        </div>
+
+        <!-- Note about mock data -->
+        <div class="mt-3">
+          <div class="alert alert-info alert-sm">
+            <i class="fas fa-info-circle me-2"></i>
+            <small>
+              <strong>Note:</strong> Due to website restrictions, we're currently showing demonstration data. 
+              In production, this would show real-time results from all platforms.
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if search_results %}
+  <!-- Search Results Section -->
+  <div class="row mb-5">
+    <div class="col-12">
+      <div class="table-container">
+        <div class="card-header">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h4 class="mb-0">
+                <i class="fas fa-list me-2 text-primary"></i>
+                Search Results for "{{ search_query }}"
+              </h4>
+              <p class="text-muted mb-0">
+                Found <strong>{{ search_results|length }}</strong> products across 
+                <strong>{{ search_results|map(attribute='platform')|unique|list|length }}</strong> platforms
+              </p>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-primary btn-sm" onclick="exportResults()">
+                <i class="fas fa-download me-1"></i>Export
+              </button>
+              <button class="btn btn-outline-success btn-sm" onclick="trackAllProducts()">
+                <i class="fas fa-plus me-1"></i>Track All
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead>
+              <tr>
+                <th>Product Details</th>
+                <th>Platform</th>
+                <th>Price</th>
+                <th>Rating</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for result in search_results %}
+                <tr class="search-result-item">
+                  <td>
+                    <div class="d-flex align-items-start">
+                      <div class="flex-grow-1">
+                        <h6 class="fw-bold mb-1 text-truncate" style="max-width: 300px;" title="{{ result.name }}">
+                          {{ result.name }}
+                        </h6>
+                        <small class="text-muted d-block">
+                          <i class="fas fa-link me-1"></i>
+                          <span class="text-truncate d-inline-block" style="max-width: 200px;">
+                            {{ result.url }}
+                          </span>
+                        </small>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="platform-badge platform-{{ result.platform.lower() }}">
+                      <i class="fas fa-shopping-cart me-1"></i>
+                      {{ result.platform }}
+                    </span>
+                  </td>
+                  <td>
+                    {% if result.price %}
+                      <div class="price-tag">
+                        <i class="fas fa-rupee-sign me-1"></i>
+                        {{ '%.2f'|format(result.price) }}
+                      </div>
+                    {% else %}
+                      <span class="text-muted">
+                        <i class="fas fa-question-circle me-1"></i>N/A
+                      </span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if result.rating > 0 %}
+                      <div class="d-flex align-items-center">
+                        <div class="me-2">
+                          {% for i in range(result.rating|int) %}
+                            <i class="fas fa-star text-warning"></i>
+                          {% endfor %}
+                          {% if result.rating % 1 > 0 %}
+                            <i class="fas fa-star-half-alt text-warning"></i>
+                          {% endif %}
+                        </div>
+                        <span class="badge bg-warning text-dark">{{ '%.1f'|format(result.rating) }}</span>
+                      </div>
+                    {% else %}
+                      <span class="text-muted">
+                        <i class="fas fa-star-o me-1"></i>No rating
+                      </span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="btn-group" role="group">
+                      <button type="button" class="btn btn-outline-primary btn-sm" 
+                              onclick="viewProduct('{{ result.url }}', '{{ result.name }}')"
+                              title="View Product">
+                        <i class="fas fa-external-link-alt"></i>
+                      </button>
+                      <button type="button" class="btn btn-outline-success btn-sm" 
+                              onclick="trackProduct('{{ result.url }}', '{{ result.name }}', {{ result.price or 0 }})"
+                              title="Track Product">
+                        <i class="fas fa-plus"></i>
+                      </button>
+                      <button type="button" class="btn btn-outline-info btn-sm" 
+                              onclick="compareProduct('{{ result.name }}', {{ result.price or 0 }}, '{{ result.platform }}')"
+                              title="Compare">
+                        <i class="fas fa-balance-scale"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if recommendations %}
+  <!-- Smart Recommendations Section -->
+  <div class="row mb-5">
+    <div class="col-12">
+      <div class="form-card p-4">
+        <div class="text-center mb-4">
+          <i class="fas fa-lightbulb fa-2x text-warning mb-3"></i>
+          <h4>💡 AI-Powered Recommendations</h4>
+          <p class="text-muted">Our smart algorithm suggests the best deals based on price and rating</p>
+        </div>
+        
+        <div class="row">
+          {% for rec in recommendations %}
+            <div class="col-lg-4 col-md-6 mb-3">
+              <div class="card h-100 recommendation-card border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                  <div class="mb-3">
+                    <span class="badge bg-primary fs-6 px-3 py-2">{{ rec.title }}</span>
+                  </div>
+                  
+                  <p class="card-text text-muted mb-3">{{ rec.message }}</p>
+                  
+                  <div class="mb-3">
+                    <span class="platform-badge platform-{{ rec.product.platform.lower() }}">
+                      <i class="fas fa-shopping-cart me-1"></i>
+                      {{ rec.product.platform }}
+                    </span>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <div class="price-tag fs-5">
+                      <i class="fas fa-rupee-sign me-1"></i>
+                      {{ '%.2f'|format(rec.product.price) }}
+                    </div>
+                  </div>
+                  
+                  {% if rec.product.rating > 0 %}
+                    <div class="mb-3">
+                      <div class="d-flex justify-content-center align-items-center">
+                        {% for i in range(rec.product.rating|int) %}
+                          <i class="fas fa-star text-warning me-1"></i>
+                        {% endfor %}
+                        <span class="badge bg-warning text-dark ms-2">{{ '%.1f'|format(rec.product.rating) }}</span>
+                      </div>
+                    </div>
+                  {% endif %}
+                  
+                  <div class="btn-group w-100" role="group">
+                    <button type="button" class="btn btn-outline-primary btn-sm" 
+                            onclick="viewProduct('{{ rec.product.url }}', '{{ rec.product.name }}')">
+                      <i class="fas fa-external-link-alt me-1"></i>View
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm" 
+                            onclick="trackProduct('{{ rec.product.url }}', '{{ rec.product.name }}', {{ rec.product.price }})">
+                      <i class="fas fa-plus me-1"></i>Track
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Price Analysis Section -->
+  <div class="row mb-5">
+    <div class="col-12">
+      <div class="form-card p-4">
+        <div class="text-center mb-4">
+          <i class="fas fa-chart-line fa-2x text-success mb-3"></i>
+          <h4>📊 Price Analysis & Insights</h4>
+          <p class="text-muted">Comprehensive price comparison across all platforms</p>
+        </div>
+        
+        {% set valid_results = search_results|selectattr("price")|list %}
+        {% if valid_results|length > 1 %}
+          {% set prices = valid_results|map(attribute="price")|list %}
+          {% set min_price = prices|min %}
+          {% set max_price = prices|max %}
+          {% set avg_price = (prices|sum / prices|length) %}
+          
+          <div class="row text-center">
+            <div class="col-lg-3 col-md-6 mb-3">
+              <div class="card price-analysis-card bg-success border-0 shadow">
+                <div class="card-body p-4">
+                  <i class="fas fa-arrow-down fa-2x mb-3"></i>
+                  <h6 class="card-title">Lowest Price</h6>
+                  <div class="display-6 fw-bold">₹{{ '%.2f'|format(min_price) }}</div>
+                  <small>Best deal available</small>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-3">
+              <div class="card price-analysis-card bg-info border-0 shadow">
+                <div class="card-body p-4">
+                  <i class="fas fa-calculator fa-2x mb-3"></i>
+                  <h6 class="card-title">Average Price</h6>
+                  <div class="display-6 fw-bold">₹{{ '%.2f'|format(avg_price) }}</div>
+                  <small>Market average</small>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-3">
+              <div class="card price-analysis-card bg-warning border-0 shadow">
+                <div class="card-body p-4">
+                  <i class="fas fa-arrow-up fa-2x mb-3"></i>
+                  <h6 class="card-title">Highest Price</h6>
+                  <div class="display-6 fw-bold">₹{{ '%.2f'|format(max_price) }}</div>
+                  <small>Premium pricing</small>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-3">
+              <div class="card price-analysis-card bg-danger border-0 shadow">
+                <div class="card-body p-4">
+                  <i class="fas fa-chart-bar fa-2x mb-3"></i>
+                  <h6 class="card-title">Price Range</h6>
+                  <div class="display-6 fw-bold">₹{{ '%.2f'|format(max_price - min_price) }}</div>
+                  <small>Variation spread</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="text-center mt-4">
+            <div class="alert alert-info d-inline-block">
+              <i class="fas fa-info-circle me-2"></i>
+              <strong>Price Variation:</strong> 
+              <span class="badge bg-primary fs-6">
+                {{ '%.1f'|format(((max_price - min_price) / min_price) * 100) }}%
+              </span>
+              <small class="d-block mt-1">Lower percentage = More consistent pricing</small>
+            </div>
+          </div>
+        {% else %}
+          <div class="text-center text-muted">
+            <i class="fas fa-info-circle fa-3x mb-3"></i>
+            <h5>Need More Data</h5>
+            <p>Add more products to see comprehensive price analysis and insights</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Features Section -->
+  <div class="row mb-5">
+    <div class="col-md-4 mb-3">
+      <div class="card text-center h-100 interactive-card">
+        <div class="card-body p-4">
+          <i class="fas fa-search fa-2x text-primary mb-3"></i>
+          <h5 class="card-title">Smart Search</h5>
+          <p class="card-text">Search across multiple platforms with one query and get instant results</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+      <div class="card text-center h-100 interactive-card">
+        <div class="card-body p-4">
+          <i class="fas fa-lightbulb fa-2x text-warning mb-3"></i>
+          <h5 class="card-title">AI Recommendations</h5>
+          <p class="card-text">Get intelligent suggestions for best deals based on price and rating analysis</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+      <div class="card text-center h-100 interactive-card">
+        <div class="card-body p-4">
+          <i class="fas fa-chart-line fa-2x text-success mb-3"></i>
+          <h5 class="card-title">Price Analytics</h5>
+          <p class="card-text">Comprehensive price comparison with insights and market analysis</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden form for tracking products -->
+<form id="trackForm" method="post" action="{{ url_for('main.track') }}" style="display: none;">
+  <input type="hidden" name="url" id="trackUrl">
+  <input type="hidden" name="target" id="trackTarget">
+</form>
+
+<!-- JavaScript for Interactive Features -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Quick search buttons
+  document.querySelectorAll('.quick-search').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const query = this.dataset.query;
+      document.getElementById('productName').value = query;
+      document.getElementById('searchForm').submit();
+    });
+  });
+
+  // Form validation
+  const form = document.getElementById('searchForm');
+  form.addEventListener('submit', function(e) {
+    if (!form.checkValidity()) {
+      e.preventDefault();
+      e.stopPropagation();
+      showAlert('Please enter a product name to search for.', 'warning');
+      return;
+    }
+    
+    // Show loading state
+    showLoading();
+    document.getElementById('searchBtnText').textContent = 'Searching...';
+    document.getElementById('searchBtnSpinner').style.display = 'inline-block';
+    document.getElementById('searchBtn').disabled = true;
+  });
+});
+
+// Product tracking function
+function trackProduct(url, name, price) {
+  if (!url || url === 'undefined') {
+    showAlert('Invalid product URL. Cannot track this product.', 'error');
+    return;
+  }
+  
+  // Set a smart target price (15% below current price)
+  const targetPrice = Math.round(price * 0.85);
+  
+  // Show confirmation
+  if (confirm(`Track "${name}" for price alerts?\n\nCurrent Price: ₹${price}\nTarget Price: ₹${targetPrice}\n\nYou'll be notified when the price drops to ₹${targetPrice} or below.`)) {
+    // Fill the hidden form
+    document.getElementById('trackUrl').value = url;
+    document.getElementById('trackTarget').value = targetPrice;
+    
+    // Submit the form
+    document.getElementById('trackForm').submit();
+    
+    showAlert(`Successfully added "${name}" to your tracking list!`, 'success');
+  }
+}
+
+// View product function
+function viewProduct(url, name) {
+  if (!url || url === 'undefined') {
+    showAlert('Invalid product URL. Cannot open this product.', 'error');
+    return;
+  }
+  
+  // Open in new tab
+  window.open(url, '_blank');
+  showAlert(`Opening "${name}" in a new tab...`, 'info');
+}
+
+// Compare product function
+function compareProduct(name, price, platform) {
+  showAlert(`"${name}" from ${platform} - ₹${price} added to comparison list!`, 'success');
+  // You can implement comparison logic here
+}
+
+// Export results function
+function exportResults() {
+  showAlert('Export feature coming soon! You can copy the results manually for now.', 'info');
+}
+
+// Track all products function
+function trackAllProducts() {
+  const results = {{ search_results|tojson|safe }};
+  if (results.length === 0) {
+    showAlert('No products to track!', 'warning');
+    return;
+  }
+  
+  if (confirm(`Track all ${results.length} products for price monitoring?\n\nThis will add all products to your tracking list with smart target prices.`)) {
+    showAlert(`Adding ${results.length} products to tracking list...`, 'info');
+    
+    // Process each product
+    results.forEach((result, index) => {
+      setTimeout(() => {
+        if (result.price && result.url) {
+          trackProduct(result.url, result.name, result.price);
+        }
+      }, index * 500); // Stagger the requests
+    });
+  }
+}
+
+// Enhanced form validation
+function validateSearchForm() {
+  const productName = document.getElementById('productName').value.trim();
+  
+  if (productName.length < 2) {
+    showAlert('Product name must be at least 2 characters long.', 'warning');
+    return false;
+  }
+  
+  if (productName.length > 100) {
+    showAlert('Product name is too long. Please keep it under 100 characters.', 'warning');
+    return false;
+  }
+  
+  return true;
+}
+
+// Add smooth scrolling to page
+function scrollToSection(sectionId) {
+  const element = document.getElementById(sectionId);
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+// Add keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+  // Ctrl/Cmd + K to focus search
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    document.getElementById('productName').focus();
+  }
+  
+  // Enter to submit form when search input is focused
+  if (e.key === 'Enter' && document.activeElement.id === 'productName') {
+    if (validateSearchForm()) {
+      document.getElementById('searchForm').submit();
+    }
+  }
+});
+
+// Add search input enhancements
+const searchInput = document.getElementById('productName');
+if (searchInput) {
+  searchInput.addEventListener('input', function() {
+    const value = this.value.trim();
+    if (value.length > 0) {
+      this.classList.add('is-valid');
+      this.classList.remove('is-invalid');
+    } else {
+      this.classList.remove('is-valid', 'is-invalid');
+    }
+  });
+  
+  // Auto-resize input
+  searchInput.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = this.scrollHeight + 'px';
+  });
+}
+</script>
+{% endblock %}

@@ -1,39 +1,125 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Price History</h2>
-<div class="row g-4">
+<div class="hero-section">
+  <h1>📊 Price History & Analytics</h1>
+  <p>Track price changes over time and analyze trends for your products</p>
+</div>
+
+<div class="row">
   <div class="col-md-4">
-    <div class="card p-3 h-100">
-      <h6>Choose a product</h6>
-      <ul class="list-group list-group-flush">
-        {% for p in products %}
-          <li class="list-group-item d-flex justify-content-between align-items-center {% if selected==p.product_id %}active{% endif %}">
-            <a class="stretched-link {% if selected==p.product_id %}text-white{% endif %}" href="{{ url_for('main.history_item', product_id=p.product_id) }}">#{{ p.product_id }} — {{ p.title[:45] }}{% if p.title|length>45 %}…{% endif %}</a>
-          </li>
-        {% else %}
-          <li class="list-group-item text-muted">No products yet.</li>
-        {% endfor %}
-      </ul>
+    <div class="form-card p-3">
+      <h5 class="mb-3">📋 Tracked Products</h5>
+      {% if products %}
+        <div class="list-group list-group-flush">
+          {% for p in products %}
+            <a href="{{ url_for('main.history_item', product_id=p.product_id) }}" 
+               class="list-group-item list-group-item-action {% if selected and selected == p.product_id %}active{% endif %}">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1 text-truncate" style="max-width: 200px;" title="{{ p.title }}">
+                  {{ p.title }}
+                </h6>
+                <small class="{% if selected and selected == p.product_id %}text-white{% else %}text-muted{% endif %}">
+                  #{{ p.product_id }}
+                </small>
+              </div>
+              <p class="mb-1 small {% if selected and selected == p.product_id %}text-white-50{% else %}text-muted{% endif %}">
+                {{ p.site }} • ₹{{ '%.2f'|format(p.last_seen_price) }}
+              </p>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <i class="fas fa-box-open"></i>
+          <p class="text-muted">No products tracked yet</p>
+        </div>
+      {% endif %}
     </div>
   </div>
+  
   <div class="col-md-8">
     {% if history %}
-    <div class="card p-3">
-      <canvas id="priceChart" height="120"></canvas>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-      const ctx = document.getElementById('priceChart');
-      const labels = {{ history.dates|tojson }};
-      const data = {{ history.prices|tojson }};
-      new Chart(ctx, {
-        type: 'line',
-        data: { labels, datasets: [{ label: 'Price (₹)', data, tension: 0.2 }]},
-        options: { scales: { y: { beginAtZero: false } } }
-      });
-    </script>
+      <div class="history-chart">
+        <h5 class="mb-3">
+          <i class="fas fa-chart-line me-2"></i>
+          Price History for Product #{{ selected }}
+        </h5>
+        
+        {% set product = products|selectattr("product_id", "equalto", selected)|first %}
+        {% if product %}
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <div class="card bg-light">
+                <div class="card-body text-center">
+                  <h6 class="card-title text-muted">Current Price</h6>
+                  <div class="price-tag fs-4">₹{{ '%.2f'|format(product.last_seen_price) }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card bg-light">
+                <div class="card-body text-center">
+                  <h6 class="card-title text-muted">Target Price</h6>
+                  {% if product.target_price %}
+                    <div class="badge bg-warning fs-6">₹{{ '%.2f'|format(product.target_price) }}</div>
+                  {% else %}
+                    <span class="text-muted">Not set</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+        
+        <div class="table-container">
+          <table class="table table-hover mb-0">
+            <thead>
+              <tr>
+                <th>Date & Time</th>
+                <th>Price</th>
+                <th>Change</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for entry in history %}
+                <tr>
+                  <td>
+                    <small class="text-muted">{{ entry.timestamp }}</small>
+                  </td>
+                  <td>
+                    <span class="price-tag">₹{{ '%.2f'|format(entry.price) }}</span>
+                  </td>
+                  <td>
+                    {% if loop.index < history|length %}
+                      {% set prev_price = history[loop.index].price %}
+                      {% set change = entry.price - prev_price %}
+                      {% if change > 0 %}
+                        <span class="badge bg-danger">
+                          <i class="fas fa-arrow-up me-1"></i>+₹{{ '%.2f'|format(change) }}
+                        </span>
+                      {% elif change < 0 %}
+                        <span class="badge bg-success">
+                          <i class="fas fa-arrow-down me-1"></i>₹{{ '%.2f'|format(change|abs) }}
+                        </span>
+                      {% else %}
+                        <span class="badge bg-secondary">No change</span>
+                      {% endif %}
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
     {% else %}
-      <div class="alert alert-info">Select a product to view its history.</div>
+      <div class="form-card p-5 text-center">
+        <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+        <h5>Select a Product</h5>
+        <p class="text-muted">Choose a product from the left sidebar to view its price history</p>
+      </div>
     {% endif %}
   </div>
 </div>

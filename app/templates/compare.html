@@ -1,28 +1,173 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Compare Prices (Paste URLs)</h2>
-<form method="post" action="{{ url_for('main.compare') }}" class="mb-3">
-  <textarea name="urls" rows="5" class="form-control" placeholder="One URL per line">{{ pasted or '' }}</textarea>
-  <button class="btn btn-primary mt-2">Compare</button>
-</form>
+<div class="hero-section">
+  <h1>⚖️ Price Comparison Tool</h1>
+  <p>Compare product prices across multiple URLs to find the best deals</p>
+</div>
 
-<table class="table table-striped">
-  <thead>
-    <tr><th>Site</th><th>Title</th><th>Price</th><th>URL</th></tr>
-  </thead>
-  <tbody>
-    {% for r in results %}
-      <tr>
-        <td>{{ r.site }}</td>
-        <td class="text-truncate" style="max-width:480px">{{ r.title }}</td>
-        <td>₹{{ '%.2f'|format(r.price|float) }}</td>
-        <td><a href="{{ r.url }}" target="_blank">Open</a></td>
-      </tr>
-    {% else %}
-      {% if pasted %}
-        <tr><td colspan="4" class="text-muted">No results.</td></tr>
+<div class="row">
+  <div class="col-lg-8 mx-auto">
+    <div class="form-card p-4">
+      <h3 class="mb-4">🔍 Compare Multiple Products</h3>
+      <form method="post">
+        <div class="mb-3">
+          <label class="form-label">📋 Product URLs (One per line)</label>
+          <textarea name="urls" class="form-control" rows="6" placeholder="https://www.amazon.in/product1&#10;https://www.flipkart.com/product2&#10;https://www.myntra.com/product3" required>{{ pasted }}</textarea>
+          <div class="form-text">Paste multiple product URLs, one per line. Supports Amazon, Flipkart, Myntra, and Meesho.</div>
+        </div>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-search"></i> Compare Prices
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% if results %}
+<div class="row mt-5">
+  <div class="col-12">
+    <div class="table-container">
+      <div class="p-3 border-bottom">
+        <h4 class="mb-0">📊 Comparison Results</h4>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Platform</th>
+              <th>Price</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for result in results %}
+              <tr>
+                <td>
+                  <div class="fw-bold text-truncate" style="max-width: 300px;" title="{{ result.name or result.url }}">
+                    {{ result.name or 'Unknown Product' }}
+                  </div>
+                  <small class="text-muted">{{ result.url[:60] }}...</small>
+                </td>
+                <td>
+                  {% if result.platform != 'Unknown' %}
+                    <span class="platform-badge platform-{{ result.platform.lower() }}">
+                      {{ result.platform }}
+                    </span>
+                  {% else %}
+                    <span class="badge bg-secondary">{{ result.platform }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if result.price %}
+                    <span class="price-tag">₹{{ '%.2f'|format(result.price) }}</span>
+                  {% else %}
+                    <span class="text-muted">N/A</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if result.status == 'success' %}
+                    <span class="badge bg-success">
+                      <i class="fas fa-check me-1"></i>Success
+                    </span>
+                  {% else %}
+                    <span class="badge bg-danger">
+                      <i class="fas fa-times me-1"></i>Error
+                    </span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if result.status == 'success' %}
+                    <a href="{{ result.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                      <i class="fas fa-external-link-alt me-1"></i>View
+                    </a>
+                  {% else %}
+                    <span class="text-muted small">{{ result.error or 'Failed to fetch' }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="form-card p-4">
+      <h5 class="mb-3">📈 Price Analysis</h5>
+      {% set valid_results = results|selectattr("status", "equalto", "success")|list %}
+      {% if valid_results|length > 1 %}
+        {% set prices = valid_results|map(attribute="price")|list %}
+        {% set min_price = prices|min %}
+        {% set max_price = prices|max %}
+        {% set avg_price = (prices|sum / prices|length) %}
+        
+        <div class="row text-center">
+          <div class="col-md-4">
+            <div class="card bg-success text-white">
+              <div class="card-body">
+                <h6 class="card-title">Lowest Price</h6>
+                <div class="fs-4 fw-bold">₹{{ '%.2f'|format(min_price) }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-info text-white">
+              <div class="card-body">
+                <h6 class="card-title">Average Price</h6>
+                <div class="fs-4 fw-bold">₹{{ '%.2f'|format(avg_price) }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-warning text-white">
+              <div class="card-body">
+                <h6 class="card-title">Highest Price</h6>
+                <div class="fs-4 fw-bold">₹{{ '%.2f'|format(max_price) }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-3 text-center">
+          <p class="text-muted">
+            Price difference: <strong>₹{{ '%.2f'|format(max_price - min_price) }}</strong>
+            ({{ '%.1f'|format(((max_price - min_price) / min_price) * 100) }}% variation)
+          </p>
+        </div>
+      {% else %}
+        <div class="text-center text-muted">
+          <i class="fas fa-info-circle fa-2x mb-2"></i>
+          <p>Add more products to see price analysis</p>
+        </div>
       {% endif %}
-    {% endfor %}
-  </tbody>
-</table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="row mt-4">
+  <div class="col-md-6">
+    <div class="card text-center">
+      <div class="card-body">
+        <i class="fas fa-bolt fa-2x text-warning mb-2"></i>
+        <h5 class="card-title">Quick Comparison</h5>
+        <p class="card-text">Instantly compare prices across multiple platforms</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card text-center">
+      <div class="card-body">
+        <i class="fas fa-chart-bar fa-2x text-info mb-2"></i>
+        <h5 class="card-title">Price Analysis</h5>
+        <p class="card-text">Get insights on price variations and best deals</p>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

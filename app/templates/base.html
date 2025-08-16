@@ -3,34 +3,223 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dynamic Price Tracker</title>
+  <title>🔍 Smart Price Tracker - Find Best Deals</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="{{ url_for('main.index') }}">Price Tracker</a>
-    <div>
-      <a class="nav-link d-inline text-white" href="{{ url_for('main.compare') }}">Compare</a>
-      <a class="nav-link d-inline text-white" href="{{ url_for('main.history') }}">History</a>
+<!-- Modern Navigation -->
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="{{ url_for('main.index') }}">
+      <i class="fas fa-chart-line me-2 text-warning"></i>Smart Price Tracker
+    </a>
+    
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('main.index') }}">
+            <i class="fas fa-home me-1"></i>Home
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('main.search') }}">
+            <i class="fas fa-search me-1"></i>Search
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('main.compare') }}">
+            <i class="fas fa-balance-scale me-1"></i>Compare
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('main.history') }}">
+            <i class="fas fa-history me-1"></i>History
+          </a>
+        </li>
+      </ul>
     </div>
   </div>
 </nav>
 
-<div class="container py-4">
+<!-- Main Content with Top Margin -->
+<main class="main-content">
+  <!-- Flash Messages with Animation -->
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }}">{{ message }}</div>
-      {% endfor %}
+      <div class="flash-container">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show flash-message" role="alert">
+            <div class="d-flex align-items-center">
+              {% if category == 'success' %}
+                <i class="fas fa-check-circle me-2 text-success"></i>
+              {% elif category == 'danger' %}
+                <i class="fas fa-exclamation-triangle me-2 text-danger"></i>
+              {% elif category == 'warning' %}
+                <i class="fas fa-exclamation-circle me-2 text-warning"></i>
+              {% else %}
+                <i class="fas fa-info-circle me-2 text-info"></i>
+              {% endif %}
+              <span>{{ message }}</span>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      </div>
     {% endif %}
   {% endwith %}
 
   {% block content %}{% endblock %}
+</main>
+
+<!-- Modern Footer -->
+<footer class="footer mt-5">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-4">
+        <h6 class="text-white fw-bold mb-3">
+          <i class="fas fa-chart-line me-2 text-warning"></i>Smart Price Tracker
+        </h6>
+        <p class="text-muted">Find the best deals across multiple e-commerce platforms with smart price tracking and alerts.</p>
+      </div>
+      <div class="col-md-4">
+        <h6 class="text-white fw-bold mb-3">Quick Links</h6>
+        <ul class="list-unstyled">
+          <li><a href="{{ url_for('main.search') }}" class="text-muted text-decoration-none">Product Search</a></li>
+          <li><a href="{{ url_for('main.compare') }}" class="text-muted text-decoration-none">Price Comparison</a></li>
+          <li><a href="{{ url_for('main.history') }}" class="text-muted text-decoration-none">Price History</a></li>
+        </ul>
+      </div>
+      <div class="col-md-4">
+        <h6 class="text-white fw-bold mb-3">Features</h6>
+        <ul class="list-unstyled">
+          <li class="text-muted">🔍 Multi-platform Search</li>
+          <li class="text-muted">💰 Smart Price Alerts</li>
+          <li class="text-muted">📊 Price Analytics</li>
+        </ul>
+      </div>
+    </div>
+    <hr class="border-secondary my-4">
+    <div class="text-center">
+      <p class="text-muted mb-0">&copy; 2024 Smart Price Tracker. Built with ❤️ using Flask & Python.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay" style="display: none;">
+  <div class="loading-content">
+    <div class="spinner-border text-warning" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-3 text-white">Searching for products...</p>
+  </div>
 </div>
 
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title">
+          <i class="fas fa-check-circle me-2"></i>Success!
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p id="successMessage">Operation completed successfully!</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" data-bs-dismiss="modal">Great!</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Error Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+          <i class="fas fa-exclamation-triangle me-2"></i>Oops!
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p id="errorMessage">Something went wrong. Please try again.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Got it</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+<!-- Global JavaScript Functions -->
+<script>
+// Global utility functions
+window.showLoading = function() {
+  document.getElementById('loadingOverlay').style.display = 'flex';
+};
+
+window.hideLoading = function() {
+  document.getElementById('loadingOverlay').style.display = 'none';
+};
+
+window.showSuccess = function(message) {
+  document.getElementById('successMessage').textContent = message;
+  new bootstrap.Modal(document.getElementById('successModal')).show();
+};
+
+window.showError = function(message) {
+  document.getElementById('errorMessage').textContent = message;
+  new bootstrap.Modal(document.getElementById('errorModal')).show();
+};
+
+window.showAlert = function(message, type = 'info') {
+  const alertDiv = document.createElement('div');
+  alertDiv.className = `alert alert-${type} alert-dismissible fade show flash-message`;
+  alertDiv.innerHTML = `
+    <div class="d-flex align-items-center">
+      <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : 'info-circle'} me-2 text-${type}"></i>
+      <span>${message}</span>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+  
+  const container = document.querySelector('.flash-container') || document.querySelector('.main-content');
+  container.insertBefore(alertDiv, container.firstChild);
+  
+  // Auto-hide after 5 seconds
+  setTimeout(() => {
+    if (alertDiv.parentNode) {
+      alertDiv.remove();
+    }
+  }, 5000);
+};
+
+// Auto-hide flash messages
+document.addEventListener('DOMContentLoaded', function() {
+  const flashMessages = document.querySelectorAll('.flash-message');
+  flashMessages.forEach(message => {
+    setTimeout(() => {
+      if (message.parentNode) {
+        message.remove();
+      }
+    }, 5000);
+  });
+});
+</script>
 </body>
 </html>
