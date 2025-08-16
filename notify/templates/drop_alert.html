@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Price Drop Alert</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .container { padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      background: #28a745;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+    .btn:hover { background: #218838; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🎉 Good news! Price dropped for {{ product_name }}</h2>
+    <p><b>Current Price:</b> ₹{{ current_price }}</p>
+    <p><b>Your Target Price:</b> ₹{{ target_price }}</p>
+    <p>Click below to buy it now before the price goes up again:</p>
+    <a href="{{ product_url }}" class="btn">Buy Now</a>
+  </div>
+</body>
+</html>

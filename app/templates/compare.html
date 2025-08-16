@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Compare Prices (Paste URLs)</h2>
+<form method="post" action="{{ url_for('main.compare') }}" class="mb-3">
+  <textarea name="urls" rows="5" class="form-control" placeholder="One URL per line">{{ pasted or '' }}</textarea>
+  <button class="btn btn-primary mt-2">Compare</button>
+</form>
+
+<table class="table table-striped">
+  <thead>
+    <tr><th>Site</th><th>Title</th><th>Price</th><th>URL</th></tr>
+  </thead>
+  <tbody>
+    {% for r in results %}
+      <tr>
+        <td>{{ r.site }}</td>
+        <td class="text-truncate" style="max-width:480px">{{ r.title }}</td>
+        <td>₹{{ '%.2f'|format(r.price|float) }}</td>
+        <td><a href="{{ r.url }}" target="_blank">Open</a></td>
+      </tr>
+    {% else %}
+      {% if pasted %}
+        <tr><td colspan="4" class="text-muted">No results.</td></tr>
+      {% endif %}
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
